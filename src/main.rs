@@ -1,11 +1,18 @@
-use rocket::*;
+mod handlers;
+mod models;
 
-#[get("/")]
-fn index() -> &'static str {
-    "Hello, world!"
-}
+use rocket::*;
 
 #[launch]
 fn rocket() -> Rocket<Build> {
-    rocket::build().mount("/", routes![index])
+    rocket::build()
+        .attach(models::CollectionsDbConn::fairing())
+        .mount("/", routes![handlers::support::health])
+        .mount(
+            "/collections",
+            routes![
+                handlers::collections::get_collection_points,
+                handlers::collections::post_collection
+            ],
+        )
 }
