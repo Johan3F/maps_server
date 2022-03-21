@@ -1,18 +1,19 @@
-mod handlers;
-mod models;
+mod api;
+mod domain;
+mod schema;
+
+#[macro_use]
+extern crate diesel;
 
 use rocket::*;
 
 #[launch]
 fn rocket() -> Rocket<Build> {
     rocket::build()
-        .attach(models::CollectionsDbConn::fairing())
-        .mount("/", routes![handlers::support::health])
+        .attach(domain::models::DbConn::fairing())
+        .mount("/", routes![api::handlers::support::health])
         .mount(
             "/collections",
-            routes![
-                handlers::collections::get_collection_points,
-                handlers::collections::post_collection
-            ],
+            routes![api::handlers::collections::post_collection],
         )
 }

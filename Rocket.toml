@@ -1,2 +1,2 @@
 [global.databases]
-collections = { url = "dev.sqlite" }
+maps = { url = "postgres://username:password@localhost/development" }
