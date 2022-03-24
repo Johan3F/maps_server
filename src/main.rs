@@ -14,6 +14,10 @@ fn rocket() -> Rocket<Build> {
         .mount("/", routes![api::handlers::support::health])
         .mount(
             "/collections",
-            routes![api::handlers::collections::post_collection],
+            routes![
+                api::handlers::collections::post_collection,
+                api::handlers::collections::get_collections,
+                api::handlers::collections::delete_collection
+            ],
         )
 }
