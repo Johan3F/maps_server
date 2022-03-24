@@ -25,20 +25,12 @@ pub async fn post_collection(conn: DbConn, new_collection: Json<Collection>) -> 
         .await;
     match result {
         Ok(collection) => ApiResponse::new_ok(json!(collection)),
-        Err(error) => match error {
-            Error::DatabaseError(kind, _) => match kind {
-                DatabaseErrorKind::UniqueViolation => {
-                    ApiResponse::new_error("Collection already exists", Status::AlreadyReported)
-                }
-                _ => ApiResponse::new_error(
-                    &format!("Unable to create new collection: {:?}", error),
-                    Status::InternalServerError,
-                ),
-            },
-            _ => ApiResponse::new_error(
-                &format!("Unable to create new collection: {}", error),
-                Status::InternalServerError,
-            ),
-        },
+        Err(Error::DatabaseError(DatabaseErrorKind::UniqueViolation, _)) => {
+            ApiResponse::new_error("Collection already exists", Status::AlreadyReported)
+        }
+        Err(error) => ApiResponse::new_error(
+            &format!("Unable to create new collection: {}", error),
+            Status::InternalServerError,
+        ),
     }
 }
