@@ -1,4 +1,5 @@
 -- Your SQL goes here
 CREATE TABLE collections (
-    name TEXT NOT NULL PRIMARY KEY
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL UNIQUE
 );

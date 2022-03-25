@@ -8,15 +8,19 @@ use rocket::{
     post,
     serde::json::{serde_json::json, Json},
 };
+use uuid::Uuid;
 
 use crate::{
     api::models::ApiResponse,
-    domain::models::{collection::Collection, DbConn},
+    domain::models::{
+        collection::{Collection, CollectionInput},
+        DbConn,
+    },
     schema::collections,
 };
 
 #[post("/", data = "<new_collection>")]
-pub async fn post_collection(conn: DbConn, new_collection: Json<Collection>) -> ApiResponse {
+pub async fn post_collection(conn: DbConn, new_collection: Json<CollectionInput>) -> ApiResponse {
     let result = conn
         .run(|c| {
             diesel::insert_into(collections::table)
@@ -48,24 +52,27 @@ pub async fn get_collections(conn: DbConn) -> ApiResponse {
     }
 }
 
-#[delete("/", data = "<collection_to_remove>")]
+#[delete("/", data = "<collections_to_remove>")]
 pub async fn delete_collection(
     conn: DbConn,
-    collection_to_remove: Json<Collection>,
+    collections_to_remove: Json<Vec<Uuid>>,
 ) -> ApiResponse {
-    let collection_name = collection_to_remove.0.name.clone();
+    let collections_to_remove = collections_to_remove.0;
+    let collections_to_remove_log = collections_to_remove.clone();
+
     let result = conn
         .run(|c| {
-            diesel::delete(
-                collections::table.filter(collections::name.eq_all(collection_to_remove.0.name)),
-            )
-            .execute(c)
+            diesel::delete(collections::table.filter(collections::id.eq_any(collections_to_remove)))
+                .execute(c)
         })
         .await;
     match result {
-        Ok(_) => ApiResponse::new_ok(json!({ "removed": collection_name })),
+        Ok(_) => ApiResponse::new_ok(json!({ "removed": &collections_to_remove_log })),
         Err(error) => ApiResponse::new_error(
-            &format!("Unable to remove collection {}: {}", collection_name, error),
+            &format!(
+                "Unable to remove collections {:#?}: {}",
+                collections_to_remove_log, error
+            ),
             Status::InternalServerError,
         ),
     }

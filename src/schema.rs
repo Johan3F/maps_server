@@ -1,5 +1,6 @@
 table! {
-    collections (name) {
+    collections (id) {
+        id -> Uuid,
         name -> Text,
     }
 }
