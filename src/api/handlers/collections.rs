@@ -67,7 +67,7 @@ pub async fn delete_collection(
         })
         .await;
     match result {
-        Ok(_) => ApiResponse::new_ok(json!({ "removed": &collections_to_remove_log })),
+        Ok(removed_count) => ApiResponse::new_ok(json!({ "removed_entries": removed_count })),
         Err(error) => ApiResponse::new_error(
             &format!(
                 "Unable to remove collections {:#?}: {}",
