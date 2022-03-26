@@ -5,7 +5,7 @@ use diesel::{
 use rocket::{
     delete, get,
     http::Status,
-    post,
+    patch, post,
     serde::json::{serde_json::json, Json},
 };
 use uuid::Uuid;
@@ -13,14 +13,14 @@ use uuid::Uuid;
 use crate::{
     api::models::ApiResponse,
     domain::models::{
-        collection::{Collection, CollectionInput},
+        collection::{Collection, CollectionNew},
         DbConn,
     },
     schema::collections,
 };
 
 #[post("/", data = "<new_collection>")]
-pub async fn post_collection(conn: DbConn, new_collection: Json<CollectionInput>) -> ApiResponse {
+pub async fn post_collection(conn: DbConn, new_collection: Json<CollectionNew>) -> ApiResponse {
     let result = conn
         .run(|c| {
             diesel::insert_into(collections::table)
@@ -29,11 +29,11 @@ pub async fn post_collection(conn: DbConn, new_collection: Json<CollectionInput>
         })
         .await;
     match result {
-        Ok(collection) => ApiResponse::new_ok(json!(collection)),
+        Ok(collection) => ApiResponse::new(json!(collection), Status::Created),
         Err(Error::DatabaseError(DatabaseErrorKind::UniqueViolation, _)) => {
-            ApiResponse::new_error("Collection already exists", Status::AlreadyReported)
+            ApiResponse::new_message("Collection already exists", Status::AlreadyReported)
         }
-        Err(error) => ApiResponse::new_error(
+        Err(error) => ApiResponse::new_message(
             &format!("Unable to create new collection: {}", error),
             Status::InternalServerError,
         ),
@@ -45,34 +45,60 @@ pub async fn get_collections(conn: DbConn) -> ApiResponse {
     let result = conn.run(|c| collections::table.load::<Collection>(c)).await;
     match result {
         Ok(collections) => ApiResponse::new_ok(json!(collections)),
-        Err(error) => ApiResponse::new_error(
+        Err(error) => ApiResponse::new_message(
             &format!("Unable to get collections: {}", error),
             Status::InternalServerError,
         ),
     }
 }
 
-#[delete("/", data = "<collections_to_remove>")]
-pub async fn delete_collection(
-    conn: DbConn,
-    collections_to_remove: Json<Vec<Uuid>>,
-) -> ApiResponse {
-    let collections_to_remove = collections_to_remove.0;
-    let collections_to_remove_log = collections_to_remove.clone();
+#[delete("/", data = "<collection_to_remove>")]
+pub async fn delete_collection(conn: DbConn, collection_to_remove: Json<Uuid>) -> ApiResponse {
+    let collection_to_remove = collection_to_remove.0;
 
     let result = conn
-        .run(|c| {
-            diesel::delete(collections::table.filter(collections::id.eq_any(collections_to_remove)))
+        .run(move |c| {
+            diesel::delete(collections::table.filter(collections::id.eq(collection_to_remove)))
                 .execute(c)
         })
         .await;
     match result {
-        Ok(removed_count) => ApiResponse::new_ok(json!({ "removed_entries": removed_count })),
-        Err(error) => ApiResponse::new_error(
+        Ok(1) => ApiResponse::new_message("removed", Status::Accepted),
+        Ok(0) => ApiResponse::new_message("Collection not found", Status::NotFound),
+        Ok(removed_collections) => ApiResponse::new_message(
             &format!(
-                "Unable to remove collections {:#?}: {}",
-                collections_to_remove_log, error
+                "Something went wrong. Removed {} collections!",
+                removed_collections
             ),
+            Status::InternalServerError,
+        ),
+        Err(error) => ApiResponse::new_message(
+            &format!("Unable to remove collection: {}", error),
+            Status::InternalServerError,
+        ),
+    }
+}
+
+#[patch("/", data = "<collection_to_update>")]
+pub async fn update_collection(
+    conn: DbConn,
+    collection_to_update: Json<Collection>,
+) -> ApiResponse {
+    let collection_to_update = collection_to_update.0;
+
+    let result = conn
+        .run(move |c| {
+            diesel::update(collections::table.filter(collections::id.eq(collection_to_update.id)))
+                .set(collections::name.eq(collection_to_update.name))
+                .get_result::<Collection>(c)
+        })
+        .await;
+
+    match result {
+        Ok(updated_collection) => ApiResponse::new(json!(updated_collection), Status::Accepted),
+        Err(Error::NotFound) => ApiResponse::new_message("Collection not found", Status::NotFound),
+        Err(error) => ApiResponse::new_message(
+            &format!("Unable to patch collection: {}", error),
             Status::InternalServerError,
         ),
     }

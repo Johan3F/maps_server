@@ -20,8 +20,8 @@ impl ApiResponse {
         ApiResponse::new(json, Status::Ok)
     }
 
-    pub fn new_error(message: &str, status_code: Status) -> ApiResponse {
-        ApiResponse::new(json!(ApiResponseError::new(message)), status_code)
+    pub fn new_message(message: &str, status_code: Status) -> ApiResponse {
+        ApiResponse::new(json!(ApiResponseMessage::new(message)), status_code)
     }
 }
 
@@ -35,13 +35,13 @@ impl<'r> Responder<'r, 'static> for ApiResponse {
 }
 
 #[derive(Serialize)]
-struct ApiResponseError {
+struct ApiResponseMessage {
     message: String,
 }
 
-impl ApiResponseError {
-    fn new(message: &str) -> ApiResponseError {
-        ApiResponseError {
+impl ApiResponseMessage {
+    fn new(message: &str) -> ApiResponseMessage {
+        ApiResponseMessage {
             message: message.to_owned(),
         }
     }

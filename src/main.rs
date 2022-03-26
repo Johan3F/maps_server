@@ -17,7 +17,8 @@ fn rocket() -> Rocket<Build> {
             routes![
                 api::handlers::collections::post_collection,
                 api::handlers::collections::get_collections,
-                api::handlers::collections::delete_collection
+                api::handlers::collections::delete_collection,
+                api::handlers::collections::update_collection,
             ],
         )
 }

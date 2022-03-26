@@ -13,6 +13,6 @@ pub struct Collection {
 
 #[derive(Serialize, Queryable, Deserialize, Insertable)]
 #[table_name = "collections"]
-pub struct CollectionInput {
+pub struct CollectionNew {
     pub name: String,
 }
