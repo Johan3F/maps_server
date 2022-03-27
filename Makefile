@@ -1,4 +1,4 @@
-DEV_DB=development
+DEV_DB=maps
 DEV_DB_USER=username
 DEV_DB_PASS=password
 
