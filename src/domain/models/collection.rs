@@ -11,7 +11,7 @@ pub struct Collection {
     pub name: String,
 }
 
-#[derive(Serialize, Queryable, Deserialize, Insertable)]
+#[derive(Deserialize, Insertable)]
 #[table_name = "collections"]
 pub struct CollectionNew {
     pub name: String,
