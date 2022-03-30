@@ -12,6 +12,7 @@ rocket_sync_db_pools = { version = "0.1.0-rc.1", features = [
 ] }
 
 diesel = { version = "1.4.8", features = ["postgres", "uuidv07"] }
-serde = "1.0.136"
+diesel_migrations = "1.4.0"
 
+serde = "1.0.136"
 uuid = { version = "0.8.2", features = ["serde"] }

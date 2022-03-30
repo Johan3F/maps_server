@@ -103,3 +103,21 @@ pub async fn update_collection(
         ),
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::rocket;
+    use rocket::http::Status;
+    use rocket::local::blocking::Client;
+
+    use rocket::serde::json::serde_json::json;
+
+    #[test]
+    fn test_collections() {
+        let client = Client::tracked(rocket()).expect("valid rocket instance");
+
+        let response = client.get("/collections").dispatch();
+        assert_eq!(response.status(), Status::Ok);
+        assert_eq!(response.into_json(), Some(json!([])));
+    }
+}
