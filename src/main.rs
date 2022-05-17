@@ -17,13 +17,15 @@ async fn migrate(rocket: Rocket<Build>) -> Result<Rocket<Build>, Rocket<Build>> 
     let db = domain::models::DbConn::get_one(&rocket)
         .await
         .expect("Unable to connect to database for executing migrations");
-    db.run(|conn| match embedded_migrations::run(&*conn) {
-        Ok(()) => Ok(rocket),
-        Err(e) => {
-            println!("Failed to run database migrations: {:?}", e);
-            Err(rocket)
-        }
-    })
+    db.run(
+        |conn| match embedded_migrations::run_with_output(&*conn, &mut std::io::stdout()) {
+            Ok(()) => Ok(rocket),
+            Err(e) => {
+                println!("Failed to run database migrations: {:?}", e);
+                Err(rocket)
+            }
+        },
+    )
     .await
 }
 
