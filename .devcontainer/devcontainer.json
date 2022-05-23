@@ -2,20 +2,23 @@
 // https://github.com/microsoft/vscode-dev-containers/tree/v0.224.2/containers/rust
 {
 	"name": "Rust",
-	"build": {
-		"dockerfile": "Dockerfile",
-		"args": {
-			// Use the VARIANT arg to pick a Debian OS version: buster, bullseye
-			// Use bullseye when on local on arm64/Apple Silicon.
-			"VARIANT": "buster"
-		}
-	},
-	"runArgs": [
-		"--network=host",
-		"--cap-add=SYS_PTRACE",
-		"--security-opt",
-		"seccomp=unconfined"
-	],
+	// "build": {
+	// 	"dockerfile": "Dockerfile",
+	// 	"args": {
+	// 		// Use the VARIANT arg to pick a Debian OS version: buster, bullseye
+	// 		// Use bullseye when on local on arm64/Apple Silicon.
+	// 		"VARIANT": "buster"
+	// 	}
+	// },
+	"dockerComposeFile": "docker-compose.yml",
+	"service": "maps",
+	"workspaceFolder": "/workspace",
+	// "runArgs": [
+	// 	"--network=host",
+	// 	"--cap-add=SYS_PTRACE",
+	// 	"--security-opt",
+	// 	"seccomp=unconfined"
+	// ],
 	// Set *default* container specific settings.json values on container create.
 	"settings": {
 		"lldb.executable": "/usr/bin/lldb",

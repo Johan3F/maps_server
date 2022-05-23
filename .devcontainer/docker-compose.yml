@@ -1,0 +1,23 @@
+version: '3'
+
+services:
+  postgres:
+    image: 'postgres:14.2-alpine'
+    restart: unless-stopped
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: username
+      POSTGRES_PASSWORD: password
+  
+  maps:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+      args: 
+        VARIANT: buster
+    volumes:
+      - ..:/workspace:cached
+    command: /bin/sh -c "while sleep 1000; do :; done"  
+    depends_on:
+      - postgres
