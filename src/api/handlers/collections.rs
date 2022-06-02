@@ -12,11 +12,8 @@ use uuid::Uuid;
 
 use crate::{
     api::models::ApiResponse,
-    domain::models::{
-        collection::{Collection, CollectionNew},
-        DbConn,
-    },
-    schema::collections,
+    db::{schema::collections, DbConn},
+    domain::models::collection::{Collection, CollectionNew},
 };
 
 #[post("/", data = "<new_collection>")]

@@ -2,7 +2,7 @@ use diesel::{Insertable, Queryable};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::schema::collections;
+use crate::db::schema::collections;
 
 #[derive(Serialize, Queryable, Deserialize, Insertable)]
 #[table_name = "collections"]
