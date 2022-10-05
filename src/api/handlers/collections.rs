@@ -107,7 +107,9 @@ mod test {
     use rocket::http::Status;
     use rocket::local::blocking::Client;
 
-    use rocket::serde::json::serde_json::json;
+    use rocket::serde::json::serde_json::{json, to_string};
+
+    use crate::domain::models::collection::{Collection, CollectionNew};
 
     #[test]
     fn test_collections() {
@@ -116,5 +118,23 @@ mod test {
         let response = client.get("/collections").dispatch();
         assert_eq!(response.status(), Status::Ok);
         assert_eq!(response.into_json(), Some(json!([])));
+
+        let collection = CollectionNew {
+            name: "test_collection".to_owned(),
+        };
+        let response = client
+            .post("/collections")
+            .body(to_string(&collection).unwrap())
+            .dispatch();
+        assert_eq!(response.status(), Status::Created);
+        let response_body = response.into_json::<Vec<Collection>>().unwrap();
+        assert_eq!(response_body.len(), 1);
+        assert_eq!(response_body[0].name, collection.name);
+
+        let response = client.get("/collections").dispatch();
+        assert_eq!(response.status(), Status::Ok);
+        let response_body = response.into_json::<Vec<Collection>>().unwrap();
+        assert_eq!(response_body.len(), 1);
+        assert_eq!(response_body[0].name, collection.name);
     }
 }
