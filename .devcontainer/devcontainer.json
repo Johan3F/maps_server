@@ -20,5 +20,6 @@
 		"tamasfe.even-better-toml",
 		"serayuzgur.crates"
 	],
+	"runArgs": ["--userns=keep-id"],
 	"remoteUser": "vscode"
 }
