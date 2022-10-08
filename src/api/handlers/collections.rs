@@ -92,7 +92,7 @@ pub async fn update_collection(
         .await;
 
     match result {
-        Ok(updated_collection) => ApiResponse::new(json!(updated_collection), Status::Accepted),
+        Ok(updated_collection) => ApiResponse::new(json!(updated_collection), Status::Ok),
         Err(Error::NotFound) => ApiResponse::new_message("Collection not found", Status::NotFound),
         Err(error) => ApiResponse::new_message(
             &format!("Unable to patch collection: {}", error),
@@ -120,32 +120,47 @@ mod test {
             name: format!("test_collection_{}", Uuid::new_v4()),
         };
 
-        {
-            // Adding a new collection
-            let response = client
-                .post("/collections")
-                .body(to_string(&collection_to_insert).unwrap())
-                .dispatch();
-            assert_eq!(response.status(), Status::Created);
-        }
-        {
-            // Verifying that the collection was added
-            let response = client.get("/collections").dispatch();
-            assert_eq!(response.status(), Status::Ok);
-            let stored_collections = response.into_json::<Vec<Collection>>().unwrap();
-            assert!(stored_collections.len() >= 1);
-            let expected_collection: Vec<_> = stored_collections
-                .iter()
-                .enumerate()
-                .filter_map(|(_, collection)| {
-                    if collection.name == collection_to_insert.name {
-                        return Some(collection);
-                    }
-                    None
-                })
-                .collect();
-            assert_eq!(expected_collection.len(), 1);
-            assert_eq!(expected_collection[0].name, collection_to_insert.name);
-        }
+        // Adding a new collection
+        let response = client
+            .post("/collections")
+            .body(to_string(&collection_to_insert).unwrap())
+            .dispatch();
+        assert_eq!(response.status(), Status::Created);
+
+        // Verifying that the collection was added
+        let response = client.get("/collections").dispatch();
+        assert_eq!(response.status(), Status::Ok);
+        let stored_collections = response.into_json::<Vec<Collection>>().unwrap();
+        assert!(stored_collections.len() >= 1);
+        let inserted_collection: Vec<_> = stored_collections
+            .iter()
+            .enumerate()
+            .filter_map(|(_, collection)| {
+                if collection.name == collection_to_insert.name {
+                    return Some(collection);
+                }
+                None
+            })
+            .collect();
+        assert_eq!(inserted_collection.len(), 1);
+        let inserted_collection = inserted_collection[0];
+        assert_eq!(inserted_collection.name, collection_to_insert.name);
+
+        // Update collection
+        let modified_collection = Collection {
+            id: inserted_collection.id,
+            name: format!("modified_{}", inserted_collection.name),
+        };
+        let response = client
+            .patch("/collections")
+            .body(to_string(&modified_collection).unwrap())
+            .dispatch();
+        assert_eq!(response.status(), Status::Ok);
+        let got_modified_collection = response.into_json::<Collection>();
+        assert!(got_modified_collection.is_some());
+        assert_eq!(
+            got_modified_collection.unwrap().name,
+            modified_collection.name
+        );
     }
 }
