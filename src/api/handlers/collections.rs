@@ -103,38 +103,49 @@ pub async fn update_collection(
 
 #[cfg(test)]
 mod test {
-    use crate::rocket;
-    use rocket::http::Status;
-    use rocket::local::blocking::Client;
+    use uuid::Uuid;
 
-    use rocket::serde::json::serde_json::{json, to_string};
+    use rocket::{http::Status, local::blocking::Client, serde::json::serde_json::to_string};
 
-    use crate::domain::models::collection::{Collection, CollectionNew};
+    use crate::{
+        domain::models::collection::{Collection, CollectionNew},
+        rocket,
+    };
 
     #[test]
     fn test_collections() {
         let client = Client::tracked(rocket()).expect("valid rocket instance");
 
-        let response = client.get("/collections").dispatch();
-        assert_eq!(response.status(), Status::Ok);
-        assert_eq!(response.into_json(), Some(json!([])));
-
-        let collection = CollectionNew {
-            name: "test_collection".to_owned(),
+        let collection_to_insert = CollectionNew {
+            name: format!("test_collection_{}", Uuid::new_v4()),
         };
-        let response = client
-            .post("/collections")
-            .body(to_string(&collection).unwrap())
-            .dispatch();
-        assert_eq!(response.status(), Status::Created);
-        let response_body = response.into_json::<Vec<Collection>>().unwrap();
-        assert_eq!(response_body.len(), 1);
-        assert_eq!(response_body[0].name, collection.name);
 
-        let response = client.get("/collections").dispatch();
-        assert_eq!(response.status(), Status::Ok);
-        let response_body = response.into_json::<Vec<Collection>>().unwrap();
-        assert_eq!(response_body.len(), 1);
-        assert_eq!(response_body[0].name, collection.name);
+        {
+            // Adding a new collection
+            let response = client
+                .post("/collections")
+                .body(to_string(&collection_to_insert).unwrap())
+                .dispatch();
+            assert_eq!(response.status(), Status::Created);
+        }
+        {
+            // Verifying that the collection was added
+            let response = client.get("/collections").dispatch();
+            assert_eq!(response.status(), Status::Ok);
+            let stored_collections = response.into_json::<Vec<Collection>>().unwrap();
+            assert!(stored_collections.len() >= 1);
+            let expected_collection: Vec<_> = stored_collections
+                .iter()
+                .enumerate()
+                .filter_map(|(_, collection)| {
+                    if collection.name == collection_to_insert.name {
+                        return Some(collection);
+                    }
+                    None
+                })
+                .collect();
+            assert_eq!(expected_collection.len(), 1);
+            assert_eq!(expected_collection[0].name, collection_to_insert.name);
+        }
     }
 }
