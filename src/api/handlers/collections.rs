@@ -1,7 +1,4 @@
-use diesel::{
-    prelude::*,
-    result::{DatabaseErrorKind, Error},
-};
+use diesel::{prelude::*, result::Error};
 use rocket::{
     delete, get,
     http::Status,
@@ -13,25 +10,24 @@ use uuid::Uuid;
 use crate::{
     api::models::ApiResponse,
     db::{schema::collections, DbConn},
-    domain::models::collection::{Collection, CollectionNew},
+    domain::{
+        controllers::collections::{CollectionsController, CollectionsError},
+        models::collection::{Collection, CollectionNew},
+    },
 };
 
 #[post("/", data = "<new_collection>")]
 pub async fn post_collection(conn: DbConn, new_collection: Json<CollectionNew>) -> ApiResponse {
-    let result = conn
-        .run(|c| {
-            diesel::insert_into(collections::table)
-                .values(new_collection.into_inner())
-                .get_result::<Collection>(c)
-        })
-        .await;
-    match result {
+    match CollectionsController::create_collection(conn, new_collection.into_inner()).await {
         Ok(collection) => ApiResponse::new(json!(collection), Status::Created),
-        Err(Error::DatabaseError(DatabaseErrorKind::UniqueViolation, _)) => {
-            ApiResponse::new_message("Collection already exists", Status::AlreadyReported)
-        }
+        Err(CollectionsError::AlreadyExists {
+            existing: existing_collection,
+        }) => ApiResponse::new_message(
+            &format!("Collection '{existing_collection}' already exists"),
+            Status::AlreadyReported,
+        ),
         Err(error) => ApiResponse::new_message(
-            &format!("Unable to create new collection: {}", error),
+            &format!("unable to create new collection: {error:?}"),
             Status::InternalServerError,
         ),
     }
@@ -39,11 +35,10 @@ pub async fn post_collection(conn: DbConn, new_collection: Json<CollectionNew>) 
 
 #[get("/")]
 pub async fn get_collections(conn: DbConn) -> ApiResponse {
-    let result = conn.run(|c| collections::table.load::<Collection>(c)).await;
-    match result {
+    match CollectionsController::get_collections(conn).await {
         Ok(collections) => ApiResponse::new_ok(json!(collections)),
         Err(error) => ApiResponse::new_message(
-            &format!("Unable to get collections: {}", error),
+            &format!("unable to get collections: {error:?}"),
             Status::InternalServerError,
         ),
     }

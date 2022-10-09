@@ -16,3 +16,5 @@ diesel_migrations = "1.4.0"
 
 serde = "1.0.136"
 uuid = { version = "0.8.2", features = ["serde", "v4"] }
+thiserror = "1.0.37"
+anyhow = "1.0.65"
