@@ -8,11 +8,11 @@ extern crate diesel;
 extern crate diesel_migrations;
 
 use rocket::fairing::AdHoc;
-use rocket::{launch, routes, Build, Rocket};
+use rocket::{launch, Build, Rocket};
 
 #[launch]
 fn rocket() -> Rocket<Build> {
-    rocket::build()
+    let building_rocket = rocket::build()
         .attach(AdHoc::try_on_ignite(
             "Database creation",
             db::create_db_if_not_exists,
@@ -21,16 +21,9 @@ fn rocket() -> Rocket<Build> {
         .attach(AdHoc::try_on_ignite(
             "Database migrator",
             db::migrations::migrate,
-        ))
-        .mount("/", routes![api::handlers::support::health])
-        .mount(
-            "/collections",
-            routes![
-                api::handlers::collections::get_collection,
-                api::handlers::collections::post_collection,
-                api::handlers::collections::get_collections,
-                api::handlers::collections::update_collection,
-                api::handlers::collections::delete_collection,
-            ],
-        )
+        ));
+
+    let building_rocket = api::handlers::support::add_routes(building_rocket);
+    let building_rocket = api::handlers::collections::add_routes(building_rocket);
+    building_rocket
 }

@@ -1,11 +1,12 @@
 use rocket::{
     delete, get,
     http::Status,
-    patch, post,
+    patch, post, routes,
     serde::{
         json::{serde_json::json, Json},
         uuid::Uuid,
     },
+    Build, Rocket,
 };
 
 use crate::{
@@ -16,6 +17,19 @@ use crate::{
         models::collection::CollectionNoID,
     },
 };
+
+pub fn add_routes(rocket: Rocket<Build>) -> Rocket<Build> {
+    rocket.mount(
+        "/collections",
+        routes![
+            get_collection,
+            post_collection,
+            get_collections,
+            update_collection,
+            delete_collection,
+        ],
+    )
+}
 
 #[get("/")]
 pub async fn get_collections(conn: DbConn) -> ApiResponse {

@@ -1,4 +1,8 @@
-use rocket::get;
+use rocket::{get, routes, Build, Rocket};
+
+pub fn add_routes(rocket: Rocket<Build>) -> Rocket<Build> {
+    rocket.mount("/", routes![health])
+}
 
 #[get("/health")]
 pub fn health() {}
