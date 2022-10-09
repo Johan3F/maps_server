@@ -1,4 +1,3 @@
-use diesel::{prelude::*, result::Error};
 use rocket::{
     delete, get,
     http::Status,
@@ -9,29 +8,12 @@ use uuid::Uuid;
 
 use crate::{
     api::models::ApiResponse,
-    db::{schema::collections, DbConn},
+    db::DbConn,
     domain::{
-        controllers::collections::{CollectionsController, CollectionsError},
+        controllers::collections::{CollectionsController, Error},
         models::collection::{Collection, CollectionNew},
     },
 };
-
-#[post("/", data = "<new_collection>")]
-pub async fn post_collection(conn: DbConn, new_collection: Json<CollectionNew>) -> ApiResponse {
-    match CollectionsController::create_collection(conn, new_collection.into_inner()).await {
-        Ok(collection) => ApiResponse::new(json!(collection), Status::Created),
-        Err(CollectionsError::AlreadyExists {
-            existing: existing_collection,
-        }) => ApiResponse::new_message(
-            &format!("Collection '{existing_collection}' already exists"),
-            Status::AlreadyReported,
-        ),
-        Err(error) => ApiResponse::new_message(
-            &format!("unable to create new collection: {error:?}"),
-            Status::InternalServerError,
-        ),
-    }
-}
 
 #[get("/")]
 pub async fn get_collections(conn: DbConn) -> ApiResponse {
@@ -44,28 +26,18 @@ pub async fn get_collections(conn: DbConn) -> ApiResponse {
     }
 }
 
-#[delete("/", data = "<collection_to_remove>")]
-pub async fn delete_collection(conn: DbConn, collection_to_remove: Json<Uuid>) -> ApiResponse {
-    let collection_to_remove = collection_to_remove.0;
-
-    let result = conn
-        .run(move |c| {
-            diesel::delete(collections::table.filter(collections::id.eq(collection_to_remove)))
-                .execute(c)
-        })
-        .await;
-    match result {
-        Ok(1) => ApiResponse::new_message("removed", Status::Accepted),
-        Ok(0) => ApiResponse::new_message("Collection not found", Status::NotFound),
-        Ok(removed_collections) => ApiResponse::new_message(
-            &format!(
-                "Something went wrong. Removed {} collections!",
-                removed_collections
-            ),
-            Status::InternalServerError,
+#[post("/", data = "<new_collection>")]
+pub async fn post_collection(conn: DbConn, new_collection: Json<CollectionNew>) -> ApiResponse {
+    match CollectionsController::create_collection(conn, new_collection.into_inner()).await {
+        Ok(collection) => ApiResponse::new(json!(collection), Status::Created),
+        Err(Error::AlreadyExists {
+            name: existing_collection,
+        }) => ApiResponse::new_message(
+            &format!("Collection '{existing_collection}' already exists"),
+            Status::AlreadyReported,
         ),
         Err(error) => ApiResponse::new_message(
-            &format!("Unable to remove collection: {}", error),
+            &format!("unable to create new collection: {error:?}"),
             Status::InternalServerError,
         ),
     }
@@ -78,19 +50,30 @@ pub async fn update_collection(
 ) -> ApiResponse {
     let collection_to_update = collection_to_update.0;
 
-    let result = conn
-        .run(move |c| {
-            diesel::update(collections::table.filter(collections::id.eq(collection_to_update.id)))
-                .set(collections::name.eq(collection_to_update.name))
-                .get_result::<Collection>(c)
-        })
-        .await;
-
-    match result {
+    match CollectionsController::update_collection(conn, collection_to_update).await {
         Ok(updated_collection) => ApiResponse::new(json!(updated_collection), Status::Ok),
-        Err(Error::NotFound) => ApiResponse::new_message("Collection not found", Status::NotFound),
+        Err(Error::NotFound { id: id_not_found }) => ApiResponse::new_message(
+            &format!("Collection '{id_not_found}' not found"),
+            Status::NotFound,
+        ),
         Err(error) => ApiResponse::new_message(
-            &format!("Unable to patch collection: {}", error),
+            &format!("unable to update collection: {error:?}"),
+            Status::InternalServerError,
+        ),
+    }
+}
+
+#[delete("/", data = "<collection_to_remove>")]
+pub async fn delete_collection(conn: DbConn, collection_to_remove: Json<Uuid>) -> ApiResponse {
+    let collection_to_delete = collection_to_remove.0;
+
+    match CollectionsController::delete_collection(conn, collection_to_delete).await {
+        Ok(()) => ApiResponse::new(json!({}), Status::Accepted),
+        Err(Error::NotFound { id: id_not_found }) => {
+            ApiResponse::new_message(&format!("id '{id_not_found}' not found"), Status::NotFound)
+        }
+        Err(error) => ApiResponse::new_message(
+            &format!("Unable to remove collection: {}", error),
             Status::InternalServerError,
         ),
     }
