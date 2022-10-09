@@ -2,16 +2,18 @@ use rocket::{
     delete, get,
     http::Status,
     patch, post,
-    serde::json::{serde_json::json, Json},
+    serde::{
+        json::{serde_json::json, Json},
+        uuid::Uuid,
+    },
 };
-use uuid::Uuid;
 
 use crate::{
     api::models::ApiResponse,
     db::DbConn,
     domain::{
         controllers::collections::{CollectionsController, Error},
-        models::collection::{Collection, CollectionNoID},
+        models::collection::CollectionNoID,
     },
 };
 
@@ -19,30 +21,6 @@ use crate::{
 pub async fn get_collections(conn: DbConn) -> ApiResponse {
     match CollectionsController::get_collections(conn).await {
         Ok(collections) => ApiResponse::new_ok(json!(collections)),
-        Err(error) => ApiResponse::new_message(
-            &format!("unable to get collections: {error:?}"),
-            Status::InternalServerError,
-        ),
-    }
-}
-
-#[get("/<collection_id>")]
-pub async fn get_collection(conn: DbConn, collection_id: String) -> ApiResponse {
-    let collection_id_uuid = match Uuid::parse_str(&collection_id) {
-        Ok(parsed_uuid) => parsed_uuid,
-        Err(_) => {
-            return ApiResponse::new_message(
-                "unable to parse a uuid from {collection_id}",
-                Status::UnprocessableEntity,
-            );
-        }
-    };
-    match CollectionsController::get_collection(conn, collection_id_uuid).await {
-        Ok(collections) => ApiResponse::new_ok(json!(collections)),
-        Err(Error::NotFound { id: id_not_found }) => ApiResponse::new_message(
-            &format!("Collection '{id_not_found}' not found"),
-            Status::NotFound,
-        ),
         Err(error) => ApiResponse::new_message(
             &format!("unable to get collections: {error:?}"),
             Status::InternalServerError,
@@ -67,14 +45,30 @@ pub async fn post_collection(conn: DbConn, new_collection: Json<CollectionNoID>)
     }
 }
 
-#[patch("/", data = "<collection_to_update>")]
+#[get("/<collection_id>")]
+pub async fn get_collection(conn: DbConn, collection_id: Uuid) -> ApiResponse {
+    match CollectionsController::get_collection(conn, collection_id).await {
+        Ok(collections) => ApiResponse::new_ok(json!(collections)),
+        Err(Error::NotFound { id: id_not_found }) => ApiResponse::new_message(
+            &format!("Collection '{id_not_found}' not found"),
+            Status::NotFound,
+        ),
+        Err(error) => ApiResponse::new_message(
+            &format!("unable to get collections: {error:?}"),
+            Status::InternalServerError,
+        ),
+    }
+}
+
+#[patch("/<collection_id>", data = "<modified_collection>")]
 pub async fn update_collection(
     conn: DbConn,
-    collection_to_update: Json<Collection>,
+    collection_id: Uuid,
+    modified_collection: Json<CollectionNoID>,
 ) -> ApiResponse {
-    let collection_to_update = collection_to_update.0;
+    let modified_collection = modified_collection.0;
 
-    match CollectionsController::update_collection(conn, collection_to_update).await {
+    match CollectionsController::update_collection(conn, collection_id, modified_collection).await {
         Ok(updated_collection) => ApiResponse::new(json!(updated_collection), Status::Ok),
         Err(Error::NotFound { id: id_not_found }) => ApiResponse::new_message(
             &format!("Collection '{id_not_found}' not found"),
@@ -87,11 +81,9 @@ pub async fn update_collection(
     }
 }
 
-#[delete("/", data = "<collection_to_remove>")]
-pub async fn delete_collection(conn: DbConn, collection_to_remove: Json<Uuid>) -> ApiResponse {
-    let collection_to_delete = collection_to_remove.0;
-
-    match CollectionsController::delete_collection(conn, collection_to_delete).await {
+#[delete("/<collection_id>")]
+pub async fn delete_collection(conn: DbConn, collection_id: Uuid) -> ApiResponse {
+    match CollectionsController::delete_collection(conn, collection_id).await {
         Ok(()) => ApiResponse::new(json!({}), Status::Accepted),
         Err(Error::NotFound { id: id_not_found }) => {
             ApiResponse::new_message(&format!("id '{id_not_found}' not found"), Status::NotFound)
@@ -105,9 +97,11 @@ pub async fn delete_collection(conn: DbConn, collection_to_remove: Json<Uuid>) -
 
 #[cfg(test)]
 mod test {
-    use uuid::Uuid;
-
-    use rocket::{http::Status, local::blocking::Client, serde::json::serde_json::to_string};
+    use rocket::{
+        http::Status,
+        local::blocking::Client,
+        serde::{json::serde_json::to_string, uuid::Uuid},
+    };
 
     use crate::{
         domain::models::collection::{Collection, CollectionNoID},
@@ -128,25 +122,17 @@ mod test {
             .body(to_string(&collection_to_insert).unwrap())
             .dispatch();
         assert_eq!(response.status(), Status::Created);
+        let inserted_collection = response.into_json::<Collection>().unwrap();
+        assert_eq!(collection_to_insert.name, inserted_collection.name);
 
         // Verifying that the collection was added
-        let response = client.get("/collections").dispatch();
+        let response = client
+            .get(format!("/collections/{}", inserted_collection.id))
+            .dispatch();
         assert_eq!(response.status(), Status::Ok);
-        let stored_collections = response.into_json::<Vec<Collection>>().unwrap();
-        assert!(stored_collections.len() >= 1);
-        let inserted_collection: Vec<_> = stored_collections
-            .iter()
-            .enumerate()
-            .filter_map(|(_, collection)| {
-                if collection.name == collection_to_insert.name {
-                    return Some(collection);
-                }
-                None
-            })
-            .collect();
-        assert_eq!(inserted_collection.len(), 1);
-        let inserted_collection = inserted_collection[0];
-        assert_eq!(inserted_collection.name, collection_to_insert.name);
+        let stored_collection = response.into_json::<Collection>().unwrap();
+        assert_eq!(inserted_collection.id, stored_collection.id);
+        assert_eq!(inserted_collection.name, stored_collection.name);
 
         // Update collection
         let modified_collection = Collection {
@@ -154,7 +140,7 @@ mod test {
             name: format!("modified_{}", inserted_collection.name),
         };
         let response = client
-            .patch("/collections")
+            .patch(format!("/collections/{}", inserted_collection.id))
             .body(to_string(&modified_collection).unwrap())
             .dispatch();
         assert_eq!(response.status(), Status::Ok);
@@ -164,5 +150,11 @@ mod test {
             got_modified_collection.unwrap().name,
             modified_collection.name
         );
+
+        // Remove collection
+        let response = client
+            .delete(format!("/collections/{}", inserted_collection.id))
+            .dispatch();
+        assert_eq!(response.status(), Status::Accepted);
     }
 }

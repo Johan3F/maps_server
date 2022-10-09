@@ -1,6 +1,7 @@
-use diesel::{Insertable, Queryable};
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
+
+use diesel::{Insertable, Queryable};
+use rocket::serde::uuid::Uuid;
 
 use crate::db::schema::collections;
 

@@ -1,7 +1,7 @@
 use anyhow::anyhow;
-use uuid::Uuid;
 
 use diesel::{prelude::*, result::DatabaseErrorKind};
+use rocket::serde::uuid::Uuid;
 
 use crate::{
     db::{schema::collections, DbConn},
@@ -83,22 +83,20 @@ impl CollectionsController {
 
     pub async fn update_collection(
         conn: DbConn,
-        collection_with_updates: Collection,
+        collection_id: Uuid,
+        modified_collection: CollectionNoID,
     ) -> Result<Collection> {
-        let id_to_update = collection_with_updates.id.clone();
         match conn
             .run(move |c| {
-                diesel::update(
-                    collections::table.filter(collections::id.eq(collection_with_updates.id)),
-                )
-                .set(collections::name.eq(collection_with_updates.name))
-                .get_result::<Collection>(c)
+                diesel::update(collections::table.filter(collections::id.eq(&collection_id)))
+                    .set(collections::name.eq(modified_collection.name))
+                    .get_result::<Collection>(c)
             })
             .await
         {
             Ok(updated_collection) => Ok(updated_collection),
             Err(diesel::result::Error::NotFound) => Err(Error::NotFound {
-                id: format!("{id_to_update}"),
+                id: format!("{collection_id}"),
             }),
             Err(error) => Err(Error::Unknown {
                 source: anyhow!(error),

@@ -27,8 +27,8 @@ fn rocket() -> Rocket<Build> {
             "/collections",
             routes![
                 api::handlers::collections::get_collection,
-                api::handlers::collections::get_collections,
                 api::handlers::collections::post_collection,
+                api::handlers::collections::get_collections,
                 api::handlers::collections::update_collection,
                 api::handlers::collections::delete_collection,
             ],
