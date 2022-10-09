@@ -39,7 +39,7 @@ pub async fn get_collections(conn: DbConn) -> ApiResponse {
     }
 }
 
-#[post("/", data = "<new_collection>")]
+#[post("/", format = "application/json", data = "<new_collection>")]
 pub async fn post_collection(conn: DbConn, new_collection: Json<CollectionNoID>) -> ApiResponse {
     match CollectionsController::create_collection(conn, new_collection.into_inner()).await {
         Ok(collection) => ApiResponse::new(json!(collection), Status::Created),
@@ -71,7 +71,11 @@ pub async fn get_collection(conn: DbConn, collection_id: Uuid) -> ApiResponse {
     }
 }
 
-#[patch("/<collection_id>", data = "<modified_collection>")]
+#[patch(
+    "/<collection_id>",
+    format = "application/json",
+    data = "<modified_collection>"
+)]
 pub async fn update_collection(
     conn: DbConn,
     collection_id: Uuid,
