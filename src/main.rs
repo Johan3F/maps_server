@@ -26,10 +26,11 @@ fn rocket() -> Rocket<Build> {
         .mount(
             "/collections",
             routes![
-                api::handlers::collections::post_collection,
+                api::handlers::collections::get_collection,
                 api::handlers::collections::get_collections,
-                api::handlers::collections::delete_collection,
+                api::handlers::collections::post_collection,
                 api::handlers::collections::update_collection,
+                api::handlers::collections::delete_collection,
             ],
         )
 }

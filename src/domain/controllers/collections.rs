@@ -5,7 +5,7 @@ use diesel::{prelude::*, result::DatabaseErrorKind};
 
 use crate::{
     db::{schema::collections, DbConn},
-    domain::models::collection::{Collection, CollectionNew},
+    domain::models::collection::{Collection, CollectionNoID},
 };
 
 #[derive(thiserror::Error, Debug)]
@@ -36,9 +36,28 @@ impl CollectionsController {
         }
     }
 
+    pub async fn get_collection(conn: DbConn, collection_id: Uuid) -> Result<Collection> {
+        let result = conn
+            .run(move |c| {
+                collections::table
+                    .filter(collections::id.eq(&collection_id))
+                    .first(c)
+            })
+            .await;
+        match result {
+            Ok(collection) => Ok(collection),
+            Err(diesel::result::Error::NotFound) => Err(Error::NotFound {
+                id: format!("{collection_id}"),
+            }),
+            Err(error) => Err(Error::Unknown {
+                source: anyhow!(error),
+            }),
+        }
+    }
+
     pub async fn create_collection(
         conn: DbConn,
-        new_collection: CollectionNew,
+        new_collection: CollectionNoID,
     ) -> Result<Collection> {
         let name_to_create = new_collection.name.clone();
 

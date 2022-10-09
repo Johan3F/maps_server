@@ -11,7 +11,7 @@ use crate::{
     db::DbConn,
     domain::{
         controllers::collections::{CollectionsController, Error},
-        models::collection::{Collection, CollectionNew},
+        models::collection::{Collection, CollectionNoID},
     },
 };
 
@@ -26,8 +26,32 @@ pub async fn get_collections(conn: DbConn) -> ApiResponse {
     }
 }
 
+#[get("/<collection_id>")]
+pub async fn get_collection(conn: DbConn, collection_id: String) -> ApiResponse {
+    let collection_id_uuid = match Uuid::parse_str(&collection_id) {
+        Ok(parsed_uuid) => parsed_uuid,
+        Err(_) => {
+            return ApiResponse::new_message(
+                "unable to parse a uuid from {collection_id}",
+                Status::UnprocessableEntity,
+            );
+        }
+    };
+    match CollectionsController::get_collection(conn, collection_id_uuid).await {
+        Ok(collections) => ApiResponse::new_ok(json!(collections)),
+        Err(Error::NotFound { id: id_not_found }) => ApiResponse::new_message(
+            &format!("Collection '{id_not_found}' not found"),
+            Status::NotFound,
+        ),
+        Err(error) => ApiResponse::new_message(
+            &format!("unable to get collections: {error:?}"),
+            Status::InternalServerError,
+        ),
+    }
+}
+
 #[post("/", data = "<new_collection>")]
-pub async fn post_collection(conn: DbConn, new_collection: Json<CollectionNew>) -> ApiResponse {
+pub async fn post_collection(conn: DbConn, new_collection: Json<CollectionNoID>) -> ApiResponse {
     match CollectionsController::create_collection(conn, new_collection.into_inner()).await {
         Ok(collection) => ApiResponse::new(json!(collection), Status::Created),
         Err(Error::AlreadyExists {
@@ -86,7 +110,7 @@ mod test {
     use rocket::{http::Status, local::blocking::Client, serde::json::serde_json::to_string};
 
     use crate::{
-        domain::models::collection::{Collection, CollectionNew},
+        domain::models::collection::{Collection, CollectionNoID},
         rocket,
     };
 
@@ -94,7 +118,7 @@ mod test {
     fn test_collections() {
         let client = Client::tracked(rocket()).expect("valid rocket instance");
 
-        let collection_to_insert = CollectionNew {
+        let collection_to_insert = CollectionNoID {
             name: format!("test_collection_{}", Uuid::new_v4()),
         };
 
