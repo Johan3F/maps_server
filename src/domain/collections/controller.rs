@@ -3,10 +3,8 @@ use anyhow::anyhow;
 use diesel::{prelude::*, result::DatabaseErrorKind};
 use rocket::serde::uuid::Uuid;
 
-use crate::{
-    db::{schema::collections, DbConn},
-    domain::models::collection::{Collection, CollectionNoID},
-};
+use super::models::{Collection, CollectionNoID};
+use crate::db::{schema::collections, DbConn};
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {

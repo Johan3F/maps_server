@@ -12,10 +12,7 @@ use rocket::{
 use crate::{
     api::models::ApiResponse,
     db::DbConn,
-    domain::{
-        controllers::collections::{CollectionsController, Error},
-        models::collection::CollectionNoID,
-    },
+    domain::collections::{CollectionNoID, CollectionsController, Error},
 };
 
 pub fn add_routes(rocket: Rocket<Build>) -> Rocket<Build> {
@@ -118,7 +115,7 @@ mod test {
     };
 
     use crate::{
-        domain::models::collection::{Collection, CollectionNoID},
+        domain::collections::{Collection, CollectionNoID},
         rocket,
     };
 
