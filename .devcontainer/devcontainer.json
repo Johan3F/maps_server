@@ -13,13 +13,14 @@
 	},
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [
-		"rust-lang.rust",
 		"vadimcn.vscode-lldb",
 		"mutantdino.resourcemonitor",
 		"matklad.rust-analyzer",
 		"tamasfe.even-better-toml",
 		"serayuzgur.crates"
 	],
-	"runArgs": ["--userns=keep-id"],
+	"runArgs": [
+		"--userns=keep-id"
+	],
 	"remoteUser": "vscode"
 }
