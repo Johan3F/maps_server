@@ -113,7 +113,7 @@ pub async fn delete_collection(conn: DbConn, collection_id: Uuid) -> ApiResponse
 #[cfg(test)]
 mod test {
     use rocket::{
-        http::Status,
+        http::{Status, ContentType},
         local::blocking::Client,
         serde::{json::serde_json::to_string, uuid::Uuid},
     };
@@ -134,6 +134,7 @@ mod test {
         // Adding a new collection
         let response = client
             .post("/collections")
+            .header(ContentType::new("application", "json"))
             .body(to_string(&collection_to_insert).unwrap())
             .dispatch();
         assert_eq!(response.status(), Status::Created);
@@ -156,6 +157,7 @@ mod test {
         };
         let response = client
             .patch(format!("/collections/{}", inserted_collection.id))
+            .header(ContentType::new("application", "json"))
             .body(to_string(&modified_collection).unwrap())
             .dispatch();
         assert_eq!(response.status(), Status::Ok);
