@@ -6,14 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rocket = { version = "0.5.0-rc.1", features = ["json", "uuid"] }
-rocket_sync_db_pools = { version = "0.1.0-rc.1", features = [
-    "diesel_postgres_pool",
-] }
-diesel = { version = "1.4.8", features = ["postgres", "uuidv07"] }
-diesel_migrations = "1.4.0"
-
-serde = "1.0.136"
-uuid = { version = "0.8.2", features = ["serde", "v4"] }
+serde = { version = "1.0.136", features = ["derive"] }
+uuid = { version = "1.2.1", features = ["serde", "v4"] }
 thiserror = "1.0.37"
 anyhow = "1.0.65"
+axum = { version = "0.6.18", features = ["json"] }
+tokio = { version = "1.28.2", features = ["full"] }

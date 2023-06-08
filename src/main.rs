@@ -1,29 +1,35 @@
+use axum::{response::Json, routing::get, Router};
+use serde::Serialize;
+
+use std::net::SocketAddr;
+
 mod api;
-mod db;
-mod domain;
+use api::handlers;
 
-#[macro_use]
-extern crate diesel;
-#[macro_use]
-extern crate diesel_migrations;
+#[tokio::main]
+async fn main() {
+    // build our application with a route
+    let app = Router::new()
+        .route("/", get(helloworld))
+        .nest("/collections", handlers::add_routes());
 
-use rocket::fairing::AdHoc;
-use rocket::{launch, Build, Rocket};
+    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
 
-#[launch]
-fn rocket() -> Rocket<Build> {
-    let building_rocket = rocket::build()
-        .attach(AdHoc::try_on_ignite(
-            "Database creation",
-            db::create_db_if_not_exists,
-        ))
-        .attach(db::DbConn::fairing())
-        .attach(AdHoc::try_on_ignite(
-            "Database migrator",
-            db::migrations::migrate,
-        ));
+    println!("listening on {}", addr);
+    // run it
+    axum::Server::bind(&addr)
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
+}
 
-    let building_rocket = api::handlers::support::add_routes(building_rocket);
-    let building_rocket = api::handlers::collections::add_routes(building_rocket);
-    building_rocket
+async fn helloworld() -> Json<Hello> {
+    Json(Hello {
+        message: "Hello world!".to_owned(),
+    })
+}
+
+#[derive(Serialize)]
+struct Hello {
+    message: String,
 }

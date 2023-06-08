@@ -1,2 +1,3 @@
-pub mod collections;
-pub mod support;
+mod collections;
+
+pub use collections::*;
