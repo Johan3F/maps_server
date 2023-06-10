@@ -11,17 +11,13 @@ const DATABASE_URL: &str = "postgres://username:password@postgis:5432/postgres";
 
 #[tokio::main]
 async fn main() {
-    let db_pool = get_db_pool(DATABASE_URL)
+    let _db_pool = get_db_pool(DATABASE_URL)
         .await
         .expect("unable to get a db connection pool");
 
-    db::run_migration(db_pool)
-        .await
-        .expect("unable to run migrations");
-
     // build our application with a route
     let app = Router::new()
-        .nest("/collections", handlers::add_routes())
+        .nest("/collections", handlers::collections::add_routes())
         .with_state(());
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));

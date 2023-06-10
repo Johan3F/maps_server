@@ -7,7 +7,7 @@ use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 // the migration path is releative to the `CARGO_MANIFEST_DIR`
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("src/db/migrations/");
 
-pub async fn run_migration(pool: Pool<Manager<PgConnection>>) -> anyhow::Result<()> {
+pub async fn run_migrations(pool: &Pool<Manager<PgConnection>>) -> anyhow::Result<()> {
     let conn = pool.get().await?;
     let result = conn
         .interact(|conn| conn.run_pending_migrations(MIGRATIONS).map(|_| ()))

@@ -1,3 +1,1 @@
-mod collections;
-
-pub use collections::*;
+pub mod collections;

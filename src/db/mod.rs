@@ -12,5 +12,7 @@ pub async fn get_db_pool(db_url: &str) -> anyhow::Result<Pool<Manager<PgConnecti
     let manager = Manager::new(db_url, Tokio1);
     let pool = deadpool_diesel::postgres::Pool::builder(manager).build()?;
 
+    run_migrations(&pool).await?;
+
     Ok(pool)
 }
