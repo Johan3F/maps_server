@@ -1,17 +1,28 @@
-use axum::{response::Json, routing::get, Router};
-use serde::Serialize;
-
+use axum::Router;
 use std::net::SocketAddr;
 
 mod api;
 use api::handlers;
 
+mod db;
+use db::get_db_pool;
+
+const DATABASE_URL: &str = "postgres://username:password@postgis:5432/postgres";
+
 #[tokio::main]
 async fn main() {
+    let db_pool = get_db_pool(DATABASE_URL)
+        .await
+        .expect("unable to get a db connection pool");
+
+    db::run_migration(db_pool)
+        .await
+        .expect("unable to run migrations");
+
     // build our application with a route
     let app = Router::new()
-        .route("/", get(helloworld))
-        .nest("/collections", handlers::add_routes());
+        .nest("/collections", handlers::add_routes())
+        .with_state(());
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
 
@@ -21,15 +32,4 @@ async fn main() {
         .serve(app.into_make_service())
         .await
         .unwrap();
-}
-
-async fn helloworld() -> Json<Hello> {
-    Json(Hello {
-        message: "Hello world!".to_owned(),
-    })
-}
-
-#[derive(Serialize)]
-struct Hello {
-    message: String,
 }

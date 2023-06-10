@@ -1,2 +1,0 @@
-[global.databases]
-maps = { url = "postgres://username:password@postgis/maps" }
