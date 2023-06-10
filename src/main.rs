@@ -10,6 +10,8 @@ use db::get_db_pool;
 mod api;
 use api::handlers;
 
+mod utils;
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     read_environment();
