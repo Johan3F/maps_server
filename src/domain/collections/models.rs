@@ -1,6 +1,5 @@
-use serde::{Deserialize, Serialize};
-
 use diesel::{Insertable, Queryable, Selectable};
+use serde::{Deserialize, Serialize};
 
 use crate::db::collections;
 

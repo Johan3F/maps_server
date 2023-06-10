@@ -1,8 +1,11 @@
-use crate::db::Database;
-use axum::{extract::State, routing::get, Json, Router};
-use serde::Serialize;
-
+use axum::{extract::State, http::StatusCode, routing::get, Json, Router};
 use std::vec::Vec;
+
+use super::error::internal_error;
+use crate::{
+    db::Database,
+    domain::collections::{Collection, Controller},
+};
 
 pub fn add_routes(db_pool: Database) -> Router {
     Router::new()
@@ -12,13 +15,11 @@ pub fn add_routes(db_pool: Database) -> Router {
 
 async fn get_collections(
     State(pool): State<deadpool_diesel::postgres::Pool>,
-) -> Json<Vec<Collection>> {
-    Json(vec![Collection {
-        name: "First collection".to_owned(),
-    }])
-}
+) -> Result<Json<Vec<Collection>>, (StatusCode, String)> {
+    let db_connection = pool.get().await.map_err(internal_error)?;
 
-#[derive(Serialize)]
-struct Collection {
-    name: String,
+    let collections = Controller::get_collections(db_connection)
+        .await
+        .map_err(internal_error)?;
+    Ok(Json(collections))
 }
