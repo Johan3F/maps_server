@@ -113,7 +113,7 @@ pub async fn delete_collection(conn: DbConn, collection_id: Uuid) -> ApiResponse
 #[cfg(test)]
 mod test {
     use rocket::{
-        http::{Status, ContentType},
+        http::{ContentType, Status},
         local::blocking::Client,
         serde::{json::serde_json::to_string, uuid::Uuid},
     };
