@@ -1,6 +1,6 @@
-use diesel::prelude::*;
+// @generated automatically by Diesel CLI.
 
-table! {
+diesel::table! {
     collections (id) {
         id -> Uuid,
         name -> Text,
