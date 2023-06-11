@@ -10,4 +10,4 @@ RUN apt-get install gnupg2 -y
 
 USER vscode
 # Installing diesel cli
-cargo install diesel_cli --no-default-features --features postgres
+RUN cargo install diesel_cli --no-default-features --features postgres
