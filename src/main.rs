@@ -10,8 +10,6 @@ use db::get_db_pool;
 mod api;
 use api::handlers;
 
-mod utils;
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     read_environment();
@@ -20,13 +18,11 @@ async fn main() -> anyhow::Result<()> {
         .await
         .expect("unable to get a db connection pool");
 
-    // build our application with a route
     let app = Router::new().nest("/collections", handlers::collections::add_routes(db_pool));
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
 
     println!("listening on {}", addr);
-    // run it
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await

@@ -1,44 +1,38 @@
 use axum::{
     extract::{Path, State},
-    http::StatusCode,
     routing::get,
     Json, Router,
 };
-use std::vec::Vec;
+use std::{sync::Arc, vec::Vec};
 use uuid::Uuid;
 
-use super::error::internal_error;
+use super::error::Error;
 use crate::{
     db::Database,
-    domain::collections::{Collection, Controller},
+    domain::collections::{self, Collection},
 };
 
+type Result<T> = std::result::Result<T, Error>;
+type DynRepo = Arc<dyn collections::Repo + Send + Sync>;
+
 pub fn add_routes(db_pool: Database) -> Router {
+    let repo = Arc::new(collections::DatabaseRepo::new(db_pool)) as DynRepo;
+
     Router::new()
         .route("/", get(get_collections))
         .route("/:collection_id", get(get_collection))
-        .with_state(db_pool)
+        .with_state(repo)
 }
 
-async fn get_collections(
-    State(pool): State<deadpool_diesel::postgres::Pool>,
-) -> Result<Json<Vec<Collection>>, (StatusCode, String)> {
-    let db_connection = pool.get().await.map_err(internal_error)?;
-
-    let collections = Controller::get_collections(db_connection)
-        .await
-        .map_err(internal_error)?;
+async fn get_collections(State(repo): State<DynRepo>) -> Result<Json<Vec<Collection>>> {
+    let collections = repo.get_collections().await?;
     Ok(Json(collections))
 }
 
 async fn get_collection(
-    State(pool): State<deadpool_diesel::postgres::Pool>,
-    Path(collection_id): Path<Uuid>,
-) -> Result<Json<Collection>, (StatusCode, String)> {
-    let db_connection = pool.get().await.map_err(internal_error)?;
-
-    let collection = Controller::get_collection(db_connection, collection_id)
-        .await
-        .map_err(internal_error)?;
+    State(repo): State<DynRepo>,
+    Path(collection_id): Path<Uuid>, // TODO: Make sure that the error when not passing a uuid is more user freindly
+) -> Result<Json<Collection>> {
+    let collection = repo.get_collection(collection_id).await?;
     Ok(Json(collection))
 }

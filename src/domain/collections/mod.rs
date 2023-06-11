@@ -1,5 +1,8 @@
 mod models;
 pub use models::{Collection, CollectionNoID};
 
-mod controller;
-pub use controller::Controller;
+mod repo;
+pub use repo::{DatabaseRepo, Repo};
+
+mod error;
+pub use error::Error;
