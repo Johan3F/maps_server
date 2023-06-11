@@ -9,6 +9,7 @@ use crate::domain::collections;
 
 pub enum Error {
     Unknown(String),
+    PathError(axum::extract::rejection::PathRejection),
     CollectionsRepo(collections::Error),
 }
 
@@ -16,6 +17,7 @@ impl IntoResponse for Error {
     fn into_response(self) -> Response {
         let (status, error_message) = match self {
             Error::Unknown(reason) => (StatusCode::INTERNAL_SERVER_ERROR, reason),
+            Error::PathError(error) => (StatusCode::UNPROCESSABLE_ENTITY, error.to_string()),
             Error::CollectionsRepo(error) => (StatusCode::NOT_FOUND, error.to_string()),
         };
 
@@ -30,6 +32,12 @@ impl IntoResponse for Error {
 impl From<std::convert::Infallible> for Error {
     fn from(inner: std::convert::Infallible) -> Self {
         Error::Unknown(inner.to_string())
+    }
+}
+
+impl From<axum::extract::rejection::PathRejection> for Error {
+    fn from(inner: axum::extract::rejection::PathRejection) -> Self {
+        Error::PathError(inner)
     }
 }
 
