@@ -32,7 +32,7 @@ async fn get_collections(State(repo): State<DynRepo>) -> Result<Json<Vec<Collect
 
 async fn get_collection(
     State(repo): State<DynRepo>,
-    WithRejection(Path(collection_id), _): WithRejection<Path<Uuid>, Error>, // TODO: Make sure that the error when not passing a uuid is more user freindly
+    WithRejection(Path(collection_id), _): WithRejection<Path<Uuid>, Error>,
 ) -> Result<Json<Collection>> {
     let collection = repo.get_collection(collection_id).await?;
     Ok(Json(collection))
