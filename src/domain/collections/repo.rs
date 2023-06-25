@@ -1,5 +1,6 @@
+use anyhow::anyhow;
 use async_trait::async_trait;
-use diesel::{insert_into, prelude::*, update, PgConnection};
+use diesel::{delete, insert_into, prelude::*, update, PgConnection};
 use uuid::Uuid;
 
 use super::{
@@ -16,6 +17,7 @@ pub trait Repo {
     async fn get_collection(&self, collection_id: Uuid) -> Result<Collection>;
     async fn create_collection(&self, new_collection: NewCollection) -> Result<Collection>;
     async fn update_collection(&self, new_collection: Collection) -> Result<Collection>;
+    async fn delete_collection(&self, collection_id: Uuid) -> Result<Collection>;
 }
 
 pub struct DatabaseRepo {
@@ -89,5 +91,26 @@ impl Repo for DatabaseRepo {
             })
             .await??;
         Ok(collection)
+    }
+
+    async fn delete_collection(&self, collection_id: Uuid) -> Result<Collection> {
+        let db_connection = self.db_pool.get().await?;
+
+        let delete_result = db_connection
+            .interact(move |connection: &mut PgConnection| {
+                delete(collections::table)
+                    .filter(collections::id.eq(collection_id))
+                    .get_result::<Collection>(connection)
+            })
+            .await?;
+        match delete_result {
+            Ok(collection) => Ok(collection),
+            Err(error) => match error {
+                diesel::NotFound => Err(Error::NotFound { id: collection_id }),
+                error => Err(Error::Unknown {
+                    source: anyhow!(error),
+                }),
+            },
+        }
     }
 }
