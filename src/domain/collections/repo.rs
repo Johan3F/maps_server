@@ -1,6 +1,7 @@
 use anyhow::anyhow;
 use async_trait::async_trait;
 use diesel::{delete, insert_into, prelude::*, update, PgConnection};
+use std::sync::Arc;
 use uuid::Uuid;
 
 use super::{
@@ -21,11 +22,11 @@ pub trait Repo {
 }
 
 pub struct DatabaseRepo {
-    db_pool: Database,
+    db_pool: Arc<Database>,
 }
 
 impl DatabaseRepo {
-    pub fn new(db_pool: Database) -> DatabaseRepo {
+    pub fn new(db_pool: Arc<Database>) -> DatabaseRepo {
         DatabaseRepo { db_pool }
     }
 }

@@ -16,7 +16,7 @@ use crate::{
 type Result<T> = std::result::Result<T, Error>;
 type DynRepo = Arc<dyn collections::Repo + Send + Sync>;
 
-pub fn add_routes(db_pool: Database) -> Router {
+pub fn add_routes(db_pool: Arc<Database>) -> Router {
     let repo = Arc::new(collections::DatabaseRepo::new(db_pool)) as DynRepo;
 
     Router::new()

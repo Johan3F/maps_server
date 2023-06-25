@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use std::sync::Arc;
 
 use crate::db::Database;
 
@@ -6,11 +7,11 @@ use crate::db::Database;
 pub trait Repo {}
 
 pub struct DatabaseRepo {
-    db_pool: Database,
+    db_pool: Arc<Database>,
 }
 
 impl DatabaseRepo {
-    pub fn new(db_pool: Database) -> DatabaseRepo {
+    pub fn new(db_pool: Arc<Database>) -> DatabaseRepo {
         DatabaseRepo { db_pool }
     }
 }
