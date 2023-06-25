@@ -7,6 +7,8 @@ pub mod sql_types {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use diesel::pg::sql_types::*;
     use postgis_diesel::sql_types::*;
 
     collections (id) {
@@ -16,6 +18,8 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use diesel::pg::sql_types::*;
     use postgis_diesel::sql_types::*;
 
     elements (id) {
@@ -27,6 +31,8 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use diesel::pg::sql_types::*;
     use postgis_diesel::sql_types::*;
 
     geometries (element_id) {
@@ -35,6 +41,8 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use diesel::pg::sql_types::*;
     use postgis_diesel::sql_types::*;
     use super::sql_types::Geometry;
 
@@ -45,6 +53,8 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use diesel::pg::sql_types::*;
     use postgis_diesel::sql_types::*;
 
     spatial_ref_sys (srid) {
@@ -60,6 +70,8 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use diesel::pg::sql_types::*;
     use postgis_diesel::sql_types::*;
 
     tracks (element_id) {

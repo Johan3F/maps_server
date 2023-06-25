@@ -1,6 +1,6 @@
 use axum::Router;
 use dotenv::dotenv;
-use std::{env, net::SocketAddr};
+use std::{env, net::SocketAddr, sync::Arc};
 
 mod domain;
 
@@ -21,8 +21,14 @@ async fn main() -> anyhow::Result<()> {
     let db_pool = get_db_pool(&env::var("DATABASE_URL")?)
         .await
         .expect("unable to get a db connection pool");
+    let db_pool = Arc::new(db_pool);
 
-    let app = Router::new().nest("/collections", handlers::collections::add_routes(db_pool));
+    let app = Router::new()
+        .nest(
+            "/collections",
+            handlers::collections::add_routes(db_pool.clone()),
+        )
+        .nest("/points", handlers::points::add_routes(db_pool.clone()));
     let app = add_trace_layer(app);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
