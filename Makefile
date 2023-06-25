@@ -3,5 +3,8 @@ default: build
 build:
 	cargo build
 
-run_migrations:
+run-migrations:
 	diesel migration run
+
+rerun-migrations:
+	diesel migration redo
