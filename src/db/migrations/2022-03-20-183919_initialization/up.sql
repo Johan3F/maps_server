@@ -5,7 +5,7 @@ CREATE TABLE collections (
 
 CREATE TABLE elements (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    collection_id uuid,
+    collection_id uuid NOT NULL,
     name TEXT NOT NULL,
     description TEXT,
 
@@ -13,19 +13,20 @@ CREATE TABLE elements (
 );
 
 CREATE TABLE points (
-    element_id uuid PRIMARY KEY,
+    element_id uuid PRIMARY KEY NOT NULL,
+    point geometry(Point,4326) NOT NULL,
 
     CONSTRAINT fk_element FOREIGN KEY(element_id) REFERENCES elements(id) ON DELETE CASCADE
 );
 
 CREATE TABLE tracks (
-    element_id uuid PRIMARY KEY,
+    element_id uuid PRIMARY KEY NOT NULL,
 
     CONSTRAINT fk_element FOREIGN KEY(element_id) REFERENCES elements(id) ON DELETE CASCADE
 );
 
 CREATE TABLE geometries (
-    element_id uuid PRIMARY KEY,
+    element_id uuid PRIMARY KEY NOT NULL,
 
     CONSTRAINT fk_element FOREIGN KEY(element_id) REFERENCES elements(id) ON DELETE CASCADE
 );
