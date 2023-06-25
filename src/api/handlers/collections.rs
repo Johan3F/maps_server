@@ -1,6 +1,6 @@
 use axum::{
     extract::{Path, State},
-    routing::{get, post},
+    routing::{get, post, put},
     Json, Router,
 };
 use axum_extra::extract::WithRejection;
@@ -23,6 +23,7 @@ pub fn add_routes(db_pool: Database) -> Router {
         .route("/", get(get_collections))
         .route("/:collection_id", get(get_collection))
         .route("/", post(create_collection))
+        .route("/", put(update_collection))
         .with_state(repo)
 }
 
@@ -44,5 +45,13 @@ async fn create_collection(
     WithRejection(Json(new_collection), _): WithRejection<Json<NewCollection>, Error>,
 ) -> Result<Json<Collection>> {
     let collection = repo.create_collection(new_collection).await?;
+    Ok(Json(collection))
+}
+
+async fn update_collection(
+    State(repo): State<DynRepo>,
+    WithRejection(Json(collection), _): WithRejection<Json<Collection>, Error>,
+) -> Result<Json<Collection>> {
+    let collection = repo.update_collection(collection).await?;
     Ok(Json(collection))
 }

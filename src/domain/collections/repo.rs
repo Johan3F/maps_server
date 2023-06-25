@@ -1,11 +1,5 @@
-use anyhow::anyhow;
 use async_trait::async_trait;
-use diesel::{
-    insert_into,
-    prelude::*,
-    result::{DatabaseErrorKind, Error as dieselError},
-    PgConnection,
-};
+use diesel::{insert_into, prelude::*, update, PgConnection};
 use uuid::Uuid;
 
 use super::{
@@ -21,6 +15,7 @@ pub trait Repo {
     async fn get_collections(&self) -> Result<Vec<Collection>>;
     async fn get_collection(&self, collection_id: Uuid) -> Result<Collection>;
     async fn create_collection(&self, new_collection: NewCollection) -> Result<Collection>;
+    async fn update_collection(&self, new_collection: Collection) -> Result<Collection>;
 }
 
 pub struct DatabaseRepo {
@@ -70,7 +65,6 @@ impl Repo for DatabaseRepo {
 
     async fn create_collection(&self, new_collection: NewCollection) -> Result<Collection> {
         let db_connection = self.db_pool.get().await?;
-        let new_collection_name = new_collection.name.clone();
 
         let collection = db_connection
             .interact(move |connection: &mut PgConnection| {
@@ -78,20 +72,22 @@ impl Repo for DatabaseRepo {
                     .values(&new_collection)
                     .get_result::<Collection>(connection)
             })
-            .await?;
+            .await??;
 
-        match collection {
-            Ok(collection) => Ok(collection),
-            Err(error) => match error {
-                dieselError::DatabaseError(DatabaseErrorKind::UniqueViolation, _) => {
-                    Err(Error::AlreadyExists {
-                        name: new_collection_name,
-                    })
-                }
-                error => Err(Error::Unknown {
-                    source: anyhow!(error),
-                }),
-            },
-        }
+        Ok(collection)
+    }
+
+    async fn update_collection(&self, new_collection_value: Collection) -> Result<Collection> {
+        let db_connection = self.db_pool.get().await?;
+
+        let collection = db_connection
+            .interact(move |connection: &mut PgConnection| {
+                update(collections::table)
+                    .filter(collections::id.eq(new_collection_value.id))
+                    .set(collections::name.eq(new_collection_value.name))
+                    .get_result::<Collection>(connection)
+            })
+            .await??;
+        Ok(collection)
     }
 }

@@ -7,8 +7,6 @@ pub enum Error {
     },
     #[error("collection '{id:}' not found")]
     NotFound { id: uuid::Uuid },
-    #[error("collection named '{name:}' already exists")]
-    AlreadyExists { name: String },
 }
 
 impl From<deadpool::managed::PoolError<deadpool_diesel::Error>> for Error {
