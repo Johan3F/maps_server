@@ -83,15 +83,26 @@ impl Repo for DatabaseRepo {
     async fn update_collection(&self, new_collection_value: Collection) -> Result<Collection> {
         let db_connection = self.db_pool.get().await?;
 
-        let collection = db_connection
+        let update_result = db_connection
             .interact(move |connection: &mut PgConnection| {
                 update(collections::table)
                     .filter(collections::id.eq(new_collection_value.id))
                     .set(collections::name.eq(new_collection_value.name))
                     .get_result::<Collection>(connection)
             })
-            .await??;
-        Ok(collection)
+            .await?;
+
+        match update_result {
+            Ok(collection) => Ok(collection),
+            Err(error) => match error {
+                diesel::NotFound => Err(Error::NotFound {
+                    id: new_collection_value.id,
+                }),
+                error => Err(Error::Unknown {
+                    source: anyhow!(error),
+                }),
+            },
+        }
     }
 
     async fn delete_collection(&self, collection_id: Uuid) -> Result<Collection> {
