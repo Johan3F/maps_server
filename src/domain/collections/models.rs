@@ -12,6 +12,6 @@ pub struct Collection {
 
 #[derive(Serialize, Deserialize, Insertable)]
 #[diesel(table_name = collections)]
-pub struct CollectionNoID {
+pub struct NewCollection {
     pub name: String,
 }

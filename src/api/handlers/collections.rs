@@ -1,6 +1,6 @@
 use axum::{
     extract::{Path, State},
-    routing::get,
+    routing::{get, post},
     Json, Router,
 };
 use axum_extra::extract::WithRejection;
@@ -10,7 +10,7 @@ use uuid::Uuid;
 use super::error::Error;
 use crate::{
     db::Database,
-    domain::collections::{self, Collection},
+    domain::collections::{self, Collection, NewCollection},
 };
 
 type Result<T> = std::result::Result<T, Error>;
@@ -22,6 +22,7 @@ pub fn add_routes(db_pool: Database) -> Router {
     Router::new()
         .route("/", get(get_collections))
         .route("/:collection_id", get(get_collection))
+        .route("/", post(create_collection))
         .with_state(repo)
 }
 
@@ -35,5 +36,13 @@ async fn get_collection(
     WithRejection(Path(collection_id), _): WithRejection<Path<Uuid>, Error>,
 ) -> Result<Json<Collection>> {
     let collection = repo.get_collection(collection_id).await?;
+    Ok(Json(collection))
+}
+
+async fn create_collection(
+    State(repo): State<DynRepo>,
+    WithRejection(Json(new_collection), _): WithRejection<Json<NewCollection>, Error>,
+) -> Result<Json<Collection>> {
+    let collection = repo.create_collection(new_collection).await?;
     Ok(Json(collection))
 }
