@@ -22,7 +22,9 @@ async fn main() -> anyhow::Result<()> {
         .await
         .expect("unable to get a db connection pool");
 
-    let app = Router::new().nest("/collections", handlers::collections::add_routes(db_pool));
+    let app = Router::new()
+        .nest("/collections", handlers::collections::add_routes(db_pool))
+        .nest("/points", handlers::points::add_routes(db_pool));
     let app = add_trace_layer(app);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
