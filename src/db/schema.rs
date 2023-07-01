@@ -80,6 +80,9 @@ diesel::table! {
 }
 
 diesel::joinable!(elements -> collections (collection_id));
+diesel::joinable!(geometries -> elements (element_id));
+diesel::joinable!(points -> elements (element_id));
+diesel::joinable!(tracks -> elements (element_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     collections,

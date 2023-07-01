@@ -9,24 +9,24 @@ CREATE TABLE elements (
     name TEXT NOT NULL,
     description TEXT,
 
-    CONSTRAINT fk_collections FOREIGN KEY(collection_id) REFERENCES collections(id) ON DELETE CASCADE
+    CONSTRAINT fk_elements_collections FOREIGN KEY(collection_id) REFERENCES collections(id) ON DELETE CASCADE
 );
 
 CREATE TABLE points (
     element_id uuid PRIMARY KEY NOT NULL,
     point geometry(Point,4326) NOT NULL,
 
-    CONSTRAINT fk_element FOREIGN KEY(element_id) REFERENCES elements(id) ON DELETE CASCADE
+    CONSTRAINT fk_points_elements FOREIGN KEY(element_id) REFERENCES elements(id) ON DELETE CASCADE
 );
 
 CREATE TABLE tracks (
     element_id uuid PRIMARY KEY NOT NULL,
 
-    CONSTRAINT fk_element FOREIGN KEY(element_id) REFERENCES elements(id) ON DELETE CASCADE
+    CONSTRAINT fk_tracks_elements FOREIGN KEY(element_id) REFERENCES elements(id) ON DELETE CASCADE
 );
 
 CREATE TABLE geometries (
     element_id uuid PRIMARY KEY NOT NULL,
 
-    CONSTRAINT fk_element FOREIGN KEY(element_id) REFERENCES elements(id) ON DELETE CASCADE
+    CONSTRAINT fk_geometries_elements FOREIGN KEY(element_id) REFERENCES elements(id) ON DELETE CASCADE
 );
