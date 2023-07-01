@@ -4,7 +4,7 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use super::{Error, Point};
-use crate::db::{collections, elements, Database};
+use crate::db::{elements, Database};
 
 type Result<T> = std::result::Result<T, Error>;
 
@@ -29,16 +29,14 @@ impl Repo for DatabaseRepo {
         let db_connection = self.db_pool.get().await?;
 
         let collection_points = db_connection
-            .interact(|connection: &mut PgConnection| {
+            .interact(move |connection: &mut PgConnection| {
                 elements::table
                     .select(Point::as_select())
-                    // TODO: APPLY filtering
-                    // .filter(collections::id.eq(collection))
+                    .filter(elements::collection_id.eq(collection))
                     .load(connection)
             })
             .await??;
 
         Ok(collection_points)
-        // Ok(vec![])
     }
 }
