@@ -5,13 +5,14 @@ use axum::{
 };
 use serde_json::json;
 
-use crate::domain::collections;
+use crate::domain::{collections, points};
 
 pub enum Error {
     Unknown(String),
     PathError(axum::extract::rejection::PathRejection),
     JsonError(axum::extract::rejection::JsonRejection),
     CollectionsRepo(collections::Error),
+    PointsRepo(points::Error),
 }
 
 impl IntoResponse for Error {
@@ -21,6 +22,7 @@ impl IntoResponse for Error {
             Error::PathError(error) => (StatusCode::UNPROCESSABLE_ENTITY, error.to_string()),
             Error::JsonError(error) => (StatusCode::UNPROCESSABLE_ENTITY, error.to_string()),
             Error::CollectionsRepo(error) => (StatusCode::NOT_FOUND, error.to_string()),
+            Error::PointsRepo(error) => (StatusCode::NOT_FOUND, error.to_string()),
         };
 
         let body = Json(json!({
@@ -52,5 +54,11 @@ impl From<axum::extract::rejection::JsonRejection> for Error {
 impl From<collections::Error> for Error {
     fn from(inner: collections::Error) -> Self {
         Error::CollectionsRepo(inner)
+    }
+}
+
+impl From<points::Error> for Error {
+    fn from(inner: points::Error) -> Self {
+        Error::PointsRepo(inner)
     }
 }
